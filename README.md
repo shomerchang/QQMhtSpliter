@@ -6,11 +6,11 @@
 将导出的mht文件和脚本放在同一个目录
 直接命令行运行 (默认分割之后每个文件40M)
 
-  ** php ./QQMhtSpliter.php **
+  **php ./QQMhtSpliter.php**
   
 或者加上参数 分割文件的大小（单位：M）
 
-  ** php ./QQMhtSpliter.php -s 30 **
+  **php ./QQMhtSpliter.php -s 30**
 
 关于 **不存在的图片** 的解释
  不存在的图片指聊天记录中没有接收成功的图片，或者只在手机上显示的一些表情（pc端不支持显示的），还有一些pc端的表情导出了 但是没有对应的base64的编码的，是.dat形式的
