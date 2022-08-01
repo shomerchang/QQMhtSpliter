@@ -1,0 +1,2 @@
+# QQMhtSpliter
+自己写的QQ聊天记录分割脚本，可以将pc端导出的mht格式的聊天文件分割成多个html文件
