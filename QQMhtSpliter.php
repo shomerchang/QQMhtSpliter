@@ -61,9 +61,9 @@ class QQMhtSpliter {
 			$qq_text = substr($txt, $len, strlen($txt)); //聊天内容
 			if (strlen($image_data) / 1024 / 1024 < $this->per) {
 				$qq_text = $this->src($qq_text);
-	      $qq_text = $html_header . $qq_text . self::html_end_tag;
-	      file_put_contents($this->base_dir . str_replace('mht', 'html', $file_name), $qq_text);
-	      continue;
+				$qq_text = $html_header . $qq_text . self::html_end_tag;
+				file_put_contents($this->base_dir . str_replace('mht', 'html', $file_name), $qq_text);
+				continue;
 			} else {
 				$qq_text_arr = explode(PHP_EOL, $qq_text);
 				$image_size_sum = 0; //计算图片总大小
@@ -122,7 +122,7 @@ class QQMhtSpliter {
 		if($this->dat_arr) {
 			echo PHP_EOL . "不存在的图片：" . PHP_EOL;
 			foreach ($this->dat_arr as $p=>$val) {
-			  echo $val . ' => ' . $p . PHP_EOL; //给出提示，在哪个分割的文件内（根据提示，可以手动去pc端或者手机端 定位到不显示的图片或表情，然后将其保存到images文件夹下，文件名用$val+'.gif'命名，包含'{','}'）
+				echo $val . ' => ' . $p . PHP_EOL; //给出提示，在哪个分割的文件内（根据提示，可以手动去pc端或者手机端 定位到不显示的图片或表情，然后将其保存到images文件夹下，文件名用$val+'.gif'命名，包含'{','}'）
 			}
 		}
 		echo PHP_EOL . 'mht文件分割完成，总耗时:' . round(microtime(1) - $this->start, 3) . "s" . PHP_EOL;
