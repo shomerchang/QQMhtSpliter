@@ -176,6 +176,10 @@ class QQMhtSpliter {
 	}
 }
 
-$Spliter = new QQMhtSpliter(10);
-
+$opt = getopt("s:");
+if(isset($opt['s']) && intval($opt['s'])) {
+	$Spliter = new QQMhtSpliter(intval($opt['s']));
+} else {
+	$Spliter = new QQMhtSpliter();
+}
 $Spliter->convert();
