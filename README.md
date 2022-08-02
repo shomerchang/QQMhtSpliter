@@ -27,4 +27,4 @@ QQ聊天记录能导出图片的就只有mht格式的（MacOS好像没有导出�
 python版和php差不多
 
 命令行直接运行：
- **python .\QQMhtSpliter.py**
+ **python ./QQMhtSpliter.py**
