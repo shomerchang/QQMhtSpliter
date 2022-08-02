@@ -43,6 +43,7 @@ class QQMhtSpliter {
 				mkdir($this->base_dir . 'images/', 0777, TRUE);
 			}
 			//将图片分割成数组
+			$this->image_type = []; //批量时 初始化一下
 			$image_data_arr = explode($sep, $image_data);
 			//删除数组第一个和最后一个元素（没有用的两个元素）
 			unset($image_data_arr[0]);
@@ -59,10 +60,11 @@ class QQMhtSpliter {
 			}
 			//分割聊天内容
 			$qq_text = substr($txt, $len, strlen($txt)); //聊天内容
-			if (strlen($image_data) / 1024 / 1024 < $this->per) {
+			if (filesize($file_name) / 1024 / 1024 < $this->per) {
+				$this->convert_name = str_replace('.mht', '', $file_name);
 				$qq_text = $this->src($qq_text);
 				$qq_text = $html_header . $qq_text . self::html_end_tag;
-				file_put_contents($this->base_dir . str_replace('mht', 'html', $file_name), $qq_text);
+				file_put_contents($this->base_dir . $this->convert_name . '.html', $qq_text);
 				continue;
 			} else {
 				$qq_text_arr = explode(PHP_EOL, $qq_text);
@@ -118,14 +120,17 @@ class QQMhtSpliter {
 			}
 		}
 		//有些不存在的图片可能在多个分割文件都有出现，这里只显示1条，要显示全部屏蔽这行即可
-		$this->dat_arr = array_unique($this->dat_arr); //输出不存在的图片，不存在的图片指聊天记录中没有接收成功的图片，或者只在手机上显示的一些表情（pc端不支持显示的），还有一些pc端的表情导出了 但是没有对应的base64的编码的
 		if($this->dat_arr) {
+			// print_r($this->dat_arr);
 			echo PHP_EOL . "不存在的图片：" . PHP_EOL;
-			foreach ($this->dat_arr as $p=>$val) {
-				echo $val . ' => ' . $p . PHP_EOL; //给出提示，在哪个分割的文件内（根据提示，可以手动去pc端或者手机端 定位到不显示的图片或表情，然后将其保存到images文件夹下，文件名用$val+'.gif'命名，包含'{','}'）
+			foreach ($this->dat_arr as $dir=>$dat) {
+				foreach($dat as $k=>$val) {
+					// echo $val . ' => ' . $dir . PHP_EOL; //配合163行 显示全部 不去重
+					echo $val . ' => ' . $k . PHP_EOL; //去重。 给出提示，在哪个分割的文件内（根据提示，可以手动去pc端或者手机端 定位到不显示的图片或表情，然后将其保存到images文件夹下，文件名用$val+'.gif'命名，包含'{','}'）
+				}
 			}
 		}
-		echo PHP_EOL . 'mht文件分割完成，总耗时:' . round(microtime(1) - $this->start, 3) . "s" . PHP_EOL;
+		echo PHP_EOL . 'mht文件转换完成，总耗时:' . round(microtime(1) - $this->start, 3) . "s" . PHP_EOL;
 	}
 
 	//遍历和脚本同目录下所有mht文件
@@ -154,7 +159,8 @@ class QQMhtSpliter {
 			if (isset($this->image_type[$s])) {
 				return 'src="./images/' . $s . $this->image_type[$s] . '"';
 			} else { //不存在的图片转成gif
-				$this->dat_arr[$s] = str_replace('./\\', '', $this->base_dir . $this->convert_name) . '.html';
+				$this->dat_arr[$this->base_dir][$s] = str_replace('./\\', '', $this->base_dir . $this->convert_name) . '.html';
+				// $this->dat_arr[$s][] = str_replace('./\\', '', $this->base_dir . $this->convert_name) . '.html';
 				return 'src="./images/' . $s . '.gif"';
 			}
 		}, $html);
