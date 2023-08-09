@@ -18,6 +18,12 @@ class QQMhtSpliter2 {
 		$chat_file = $this->read_dir();
 		$file_name_prefix = str_replace('.mht', '', $chat_file) . '_';
 		$handle = fopen($chat_file, 'rb');
+		for($i = 0; $i < 12; $i++) { 
+			$row = fgets($handle);
+			if(strpos($row, 'boundary="----=_NextPart') !== FALSE) {
+				$sep = str_ireplace(['boundary=', '"'], '', trim($row));
+			}
+		}
 		$html_end = FALSE;
 		$txt_arr = [];
 		$image_arr = [];
@@ -27,10 +33,6 @@ class QQMhtSpliter2 {
 		}
 		if($this->read_file($handle)) {
 			foreach($this->read_file($handle) as $key=>$l) {
-				if(!$html_end && strpos($l, 'boundary="----=_NextPart') !== FALSE) {
-					$sep = str_ireplace(['boundary=', '"'], '', trim($l));
-					continue;
-				}
 				if(!$html_end && strpos($l, self::HTML_END_TAG) !== FALSE) {
 					$html_end = TRUE;
 					continue;
@@ -66,20 +68,17 @@ class QQMhtSpliter2 {
 			}
 		}
 		fclose($handle);
-		$txt = implode('', $txt_arr);
-		$_7bit_len = strpos($txt, ':7bit');
-		$arr = explode(PHP_EOL, substr($txt, 0, $_7bit_len));
-		$sep = trim($arr[8]); //分割符
-		$txt = trim(substr($txt, $_7bit_len + 5));
-		preg_match('/\d{4}-\d{2}-\d{2}<\/td><\/tr>/', $txt, $b);
-		$len = strpos($txt, $b[0]) + strlen($b[0]);
+		//$txt_arr第一个元素包含头部信息
+		preg_match('/\d{4}-\d{2}-\d{2}<\/td><\/tr>/', $txt_arr[0], $b);
+		$len = strpos($txt_arr[0], $b[0]) + strlen($b[0]);
 		//头文件1
-		$html_header = substr($txt, 0, $len) . PHP_EOL;
+		$html_header = substr($txt_arr[0], 0, $len) . PHP_EOL;
 		//头文件2
 		$html_header_other = str_replace('height:24px;line-height:24px;padding-left:10px;margin-bottom:5px;', 'padding-left:10px;', $html_header);
 		$html_header_other = str_replace('<tr><td><div style=padding-left:10px;>&nbsp;</div></td></tr>', '', $html_header_other);
 		$html_header_other = preg_replace('/日期: \d{4}-\d{2}-\d{2}/', '&nbsp;', $html_header_other);
-		$qq_text = substr($txt, $len, strlen($txt));
+		$txt_arr[0] = substr($txt_arr[0], $len, strlen($txt_arr[0]));
+		$qq_text = implode('', $txt_arr);
 		if(filesize($chat_file) / 1024 / 1024 < $this->per) {
 			$this->convert_name = str_replace('.mht', '', $chat_file);
 			$qq_text = $this->src($qq_text);
