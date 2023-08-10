@@ -10,7 +10,6 @@ if(isset($opt['s']) && intval($opt['s'])) {
 $html_end_tag = '</table></body></html>';
 $chat_file = get_mht_file();
 $file_name_prefix = str_replace('.mht', '', $chat_file) . '_';
-$handle = fopen($chat_file, 'rb');
 $html_end = FALSE;
 $txt_arr = [];
 $image_arr = [];
@@ -21,55 +20,52 @@ $base_dir = './convert/';
 if(!is_dir($base_dir . 'images/')) {
 	mkdir($base_dir . 'images/', 0777, TRUE);
 }
-if(read_file($handle)) {
-	$img_name = '';
-	$img_encode = FALSE;
-	$img_type = '';
-	foreach(read_file($handle) as $key=>$line) {
-		if($sep == '' && strpos($line, 'boundary="----=_NextPart') !== FALSE) {
-			$sep = str_ireplace(['boundary=', '"'], '', trim($line));
+$img_name = '';
+$img_encode = FALSE;
+$img_type = '';
+foreach(read_file($chat_file) as $key=>$line) {
+	if($sep == '' && strpos($line, 'boundary="----=_NextPart') !== FALSE) {
+		$sep = str_ireplace(['boundary=', '"'], '', trim($line));
+		continue;
+	}
+	if(!$html_end && strpos($line, '</html>') !== FALSE) {
+		$html_end = TRUE;
+		continue;
+	}
+	if($html_end) {
+		if($img_type =='' && strpos($line, 'Content-Type') !== FALSE) {
+			$img_type = get_img_type($line);
 			continue;
 		}
-		if(!$html_end && strpos($line, '</html>') !== FALSE) {
-			$html_end = TRUE;
+		if(!$img_encode && strpos($line, 'Content-Transfer-Encoding') !== FALSE) {
+			$img_encode = TRUE;
 			continue;
 		}
-		if($html_end) {
-			if($img_type =='' && strpos($line, 'Content-Type') !== FALSE) {
-				$img_type = get_img_type($line);
-				continue;
+		if($img_name == '' && strpos($line, 'Content-Location') !== FALSE) {
+			preg_match("/(\{[^\}]+\}\.dat)/i", $line, $matches);
+			$img_name = str_replace('.dat', '', $matches[1]);
+			continue;
+		}
+		if(strpos($line, $sep) !== FALSE) {
+			if(isset($n) && !empty($image_arr[$n])) {
+				$base64 = implode('', $image_arr[$n]);
+				$image_size[$img_name] = round(strlen($base64) / 1024, 2); //每张图片大小 单位kb
+				$image_type[$img_name] = $img_type;
+				base64toimage($base64, $img_name, $img_type);
+				$img_name = '';
+				$img_encode = FALSE;
+				$img_type = '';
+				unset($image_arr[$n]); //及时释放内存
 			}
-			if(!$img_encode && strpos($line, 'Content-Transfer-Encoding') !== FALSE) {
-				$img_encode = TRUE;
-				continue;
-			}
-			if($img_name == '' && strpos($line, 'Content-Location') !== FALSE) {
-				preg_match("/(\{[^\}]+\}\.dat)/i", $line, $matches);
-				$img_name = str_replace('.dat', '', $matches[1]);
-				continue;
-			}
-			if(strpos($line, $sep) !== FALSE) {
-				if(isset($n) && !empty($image_arr[$n])) {
-					$base64 = implode('', $image_arr[$n]);
-					$image_size[$img_name] = round(strlen($base64) / 1024, 2); //每张图片大小 单位kb
-					$image_type[$img_name] = $img_type;
-					base64toimage($base64, $img_name, $img_type);
-					$img_name = '';
-					$img_encode = FALSE;
-					$img_type = '';
-					unset($image_arr[$n]); //及时释放内存
-				}
-				$n = $key;
-			} else {
-				$image_arr[$n][] = $line;
-			}
+			$n = $key;
 		} else {
-			if($key < 12) continue;
-			$txt_arr[] = $line;
+			$image_arr[$n][] = $line;
 		}
+	} else {
+		if($key < 12) continue;
+		$txt_arr[] = $line;
 	}
 }
-fclose($handle);
 //$txt_arr第一个元素包含头部信息
 preg_match('/\d{4}-\d{2}-\d{2}<\/td><\/tr>/', $txt_arr[0], $b);
 $len = strpos($txt_arr[0], $b[0]) + strlen($b[0]);
@@ -184,10 +180,12 @@ function base64toimage($base64, $k, $img_type) {
 	file_put_contents($base_dir . 'images/' . $k . $img_type, base64_decode($base64));
 }
 
-function read_file($handle) {
-	while($line = stream_get_line($handle, 8192, "\n")) { //PHP_EOL可能会报错
+function read_file($chat_file) {
+	$handle = fopen($chat_file, 'rb');
+	while($line = stream_get_line($handle, 8192, "\n")) { // PHP_EOL可能会报错
 		yield $line.PHP_EOL;
 	}
+	fclose($handle);
 }
 
 function get_img_type($image_type) {
