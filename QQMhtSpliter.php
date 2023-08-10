@@ -1,7 +1,12 @@
 <?php
 $s = microtime(1);
 $m = memory_get_usage();
-$per_size = 80; //单位M
+$opt = getopt("s:");
+if(isset($opt['s']) && intval($opt['s'])) {
+	$per_size = intval($opt['s']);
+} else {
+	$per_size = 40; //单位M
+}
 $html_end_tag = '</table></body></html>';
 $chat_file = get_mht_file();
 $file_name_prefix = str_replace('.mht', '', $chat_file) . '_';
