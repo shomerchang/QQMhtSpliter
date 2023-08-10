@@ -185,7 +185,7 @@ function base64toimage($base64, $k, $img_type) {
 }
 
 function read_file($handle) {
-	while($line = stream_get_line($handle, 8192, PHP_EOL)) {
+	while($line = stream_get_line($handle, 8192, "\n")) { //PHP_EOL可能会报错
 		yield $line.PHP_EOL;
 	}
 }
